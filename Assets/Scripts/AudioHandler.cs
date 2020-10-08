@@ -32,7 +32,7 @@ public class AudioHandler : MonoBehaviour
     
     //private members
     private const int MIC_REC_BUFFER_LEN_SEC = 30;
-    private const int MIC_FREQUENCY = 22050;
+    private const int MIC_FREQUENCY = 16000;
     private const float PUSH_AUDIO_CHUNK_INTERVAL = 1f;
     private int _audioChunkStartPosition = -1;
     private AudioClip _rollingAudioClip;

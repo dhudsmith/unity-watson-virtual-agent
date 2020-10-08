@@ -20,6 +20,7 @@ public class WatsonDemo : MonoBehaviour
     // Required Components
     public AudioHandler Audio;
     public WebSocket Socket;
+
     #endregion
 
     #region enable/disable
@@ -72,6 +73,11 @@ public class WatsonDemo : MonoBehaviour
     {
         if (!Audio.IsListening)
         {
+            if (!Socket.IsReady)
+            {
+                Socket.Connect();
+            }
+
             TextInputField.text = ""; //empty the text field
             Audio.StartTalking(); //begin processing input audio
             StartCoroutine(SendAudioChunks()); //begin sending available audio chunks up to the web API
@@ -84,6 +90,9 @@ public class WatsonDemo : MonoBehaviour
     {
         TalkButton.interactable = true; //enable the talk button
 
+        Socket.SendText(Socket.msg_stop_listening.ToJson()); //send the stop message to trigger graceful close of stt
+        Socket.IsReady = false; //set the 
+
         if (Audio.IsListening)
         {
             //currently never get here as AudioHandler calls StopTalking internally.
@@ -92,7 +101,7 @@ public class WatsonDemo : MonoBehaviour
         }
 
         //stop sending and listening to results
-        StopCoroutine(SendAudioChunks());
+        StopCoroutine(SendAudioChunks()); //TODO: wait until buffer queue is empty before shutting down!
         StopCoroutine(ListenResults());
     }
 
@@ -101,7 +110,7 @@ public class WatsonDemo : MonoBehaviour
         while(true) {
             yield return null;
 
-            if(Audio.IsChunkReady && Socket.AsyncCount<=1)
+            if(Audio.IsChunkReady)
             {
                 //ready to send a new audio chunk to the web api
                 Socket.SendBytes(Audio.AudioChunk);
@@ -109,12 +118,9 @@ public class WatsonDemo : MonoBehaviour
                 Audio.AudioChunk = null;
                 Audio.IsChunkReady = false;
             }
-            else 
-            {
-                if (Socket.AsyncCount >= 1) Debug.Log("Waiting on Socket to catch up"); //Cannot have more than 1 outstanding async send so try again later
-            }
         }
     }
+
 
     IEnumerator ListenResults()
     {
@@ -132,9 +138,9 @@ public class WatsonDemo : MonoBehaviour
             }
         }
     }
-    #endregion
+#endregion
 
-    #region todo: unused methods
+#region todo: unused methods
     //Currently unused, would 
     private void SpeechToTextSpeechRecognized(string text, double confidence, bool final)
     {
@@ -182,6 +188,6 @@ public class WatsonDemo : MonoBehaviour
         StopTalking();
     }
 
-    #endregion
+#endregion
     
 }
