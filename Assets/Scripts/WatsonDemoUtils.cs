@@ -4,7 +4,7 @@ using System;
 public class WatsonDemoUtils
 {
     /// <summary>
-    /// Concatenate two byte arrays together. 
+    /// Concatenate two byte arrays together.
     /// </summary>
     /// <param name="a"></param>
     /// <param name="b"></param>

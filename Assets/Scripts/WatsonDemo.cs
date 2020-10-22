@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,9 +26,9 @@ public class WatsonDemo : MonoBehaviour
     #region enable/disable
     void OnEnable ()
     {
-        //Wait for audio and web api services to be ready. 
+        //Wait for audio and web api services to be ready.
         StartCoroutine(WaitForServicesReady());
-        
+
         //Actions to take when listening ends
         Audio.StoppedListening += StopTalking;
     }
@@ -43,12 +43,12 @@ public class WatsonDemo : MonoBehaviour
     {
         float startWaitTime = Time.time;
         bool allServicesReady = false;
-        TalkButton.interactable = false;    
+        TalkButton.interactable = false;
 
         while (Time.time - startWaitTime < WaitForServicesTimeout)
         {
             yield return null;
-            
+
             if (Audio.IsReady && Socket.IsReady)
             {
                 allServicesReady = true;
@@ -91,7 +91,7 @@ public class WatsonDemo : MonoBehaviour
         TalkButton.interactable = true; //enable the talk button
 
         Socket.SendText(Socket.msg_stop_listening.ToJson()); //send the stop message to trigger graceful close of stt
-        Socket.IsReady = false; //set the 
+        Socket.IsReady = false; //set the
 
         if (Audio.IsListening)
         {
@@ -130,7 +130,7 @@ public class WatsonDemo : MonoBehaviour
 
             if (Socket.IsNewResult)
             {
-                //A new audio chunk is available from the api. 
+                //A new audio chunk is available from the api.
                 Audio.OnReceiveAudio(Socket.ReceivedResults);
                 Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
                 Socket.ReceivedResults = new byte[0];
@@ -141,11 +141,11 @@ public class WatsonDemo : MonoBehaviour
 #endregion
 
 #region todo: unused methods
-    //Currently unused, would 
+    //Currently unused, would
     private void SpeechToTextSpeechRecognized(string text, double confidence, bool final)
     {
         TextInputField.text = String.Format(" {0} ({1})\n\n", text, confidence);
-        
+
 
         if (final)
         {
@@ -160,7 +160,7 @@ public class WatsonDemo : MonoBehaviour
     public void EnterText()
     {
         ConversationText.text = String.Format("You: {0}\n\n", TextInputField.text);
-        TextInputField.text = "";        
+        TextInputField.text = "";
     }
 
     //Currently unused, this would take actions in the game when speech is returned
@@ -189,5 +189,5 @@ public class WatsonDemo : MonoBehaviour
     }
 
 #endregion
-    
+
 }

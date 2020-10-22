@@ -29,7 +29,7 @@ public class AudioHandler : MonoBehaviour
     public bool IsListening { get; set; } = false;
     public bool IsChunkReady { get; set; } = false;
     public byte[] AudioChunk { get; set; } = null;
-    
+
     //private members
     private const int MIC_REC_BUFFER_LEN_SEC = 30;
     private const int MIC_FREQUENCY = 16000;
@@ -76,6 +76,15 @@ public class AudioHandler : MonoBehaviour
     }
     #endregion
 
+    #region Meta
+    /// <summary>
+    /// Send Meta information for watson speech to text
+    /// </summary>
+    public static String[] Meta(){
+      return new string[] {Convert.ToString(MIC_FREQUENCY), "1", "audio/l16"};
+    }
+    #endregion
+
     #region Starting and Stopping Talking
     /// <summary>
     /// StartTalking turns on the microphone, and begins routines for processing audio chunks
@@ -95,7 +104,7 @@ public class AudioHandler : MonoBehaviour
             {
                 StopCoroutine(_stopListeningTimeoutCoroutine);
             }
-            
+
             _pushAudioChunkCroutine = StartCoroutine(PrepareAudioChunkCoroutine());
             _stopListeningTimeoutCoroutine = StartCoroutine(StopTalkingTimeout(InactivityTimeoutSec));
         }
@@ -103,7 +112,7 @@ public class AudioHandler : MonoBehaviour
 
     /// <summary>
     /// StopTalking shuts down processes for listening to the mic and publishing audio chunks, plays the
-    /// final audio clip, and invokes any other actions tied to end of talking. 
+    /// final audio clip, and invokes any other actions tied to end of talking.
     /// </summary>
     public void StopTalking()
     {
@@ -198,7 +207,7 @@ public class AudioHandler : MonoBehaviour
 
         }
         else
-        {   
+        {
             // We've wrapped around the rolling audio clip. We have to take the audio from start position till the end of the rolling clip. Then, add clip from 0 to endPosition;
             int newClipLengthLeft = _rollingAudioClip.samples - _audioChunkStartPosition + 1;
             int newClipLengthRight = endPosition + 1;
@@ -236,5 +245,3 @@ public class AudioHandler : MonoBehaviour
     }
     #endregion
 }
-
-  
