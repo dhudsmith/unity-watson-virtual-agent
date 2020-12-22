@@ -79,7 +79,6 @@ public class WatsonDemo : MonoBehaviour
                 Socket.Connect();
             }
 
-            TextInputField.text = ""; //empty the text field
             Audio.StartTalking(); //begin processing input audio
             StartCoroutine(SendAudioChunks()); //begin sending available audio chunks up to the web API
             StartCoroutine(ListenTextMessages()); //begin receiving available audio chunks from the web API
@@ -92,7 +91,6 @@ public class WatsonDemo : MonoBehaviour
         TalkButton.interactable = true; //enable the talk button
 
         Socket.SendText(Socket.msg_stop_listening.ToJson()); //send the stop message to trigger graceful close of stt
-        //Socket.IsReady = false; //set the
 
         if (Audio.IsListening)
         {
@@ -129,24 +127,25 @@ public class WatsonDemo : MonoBehaviour
         {
             yield return null;
 
-            if (Socket.IsNewResult)
+            if (Socket.ReceivedMessageQueue.Count>0)
             {
-                if (Socket.ReceivedMessageQueue.Count>0)
-                {
-                    OnTextMessageReceived();
-                }
-                // TODO process audio somewhere
-                //else
-                //{
-                //    //A new audio chunk is available from the api.
-                //    Audio.OnReceiveAudio(Socket.ReceivedResults);
-                //    Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
-
-                //    Socket.ReceivedResults = new byte[0];
-                //}
+                OnTextMessageReceived();
             }
         }
     }
+
+    //IEnumerator ListenAudioMessages()
+    //{
+        // TODO process incoming audio somewhere
+        //else
+        //{
+        //    //A new audio chunk is available from the api.
+        //    Audio.OnReceiveAudio(Socket.ReceivedResults);
+        //    Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
+
+        //    Socket.ReceivedResults = new byte[0];
+        //}
+    //}
 
     //Handle incoming text messages
     private void OnTextMessageReceived()
@@ -181,7 +180,6 @@ public class WatsonDemo : MonoBehaviour
     //Currently unused, would
     private void SpeechToTextSpeechRecognized(string text, double confidence, bool final)
     {
-        TextInputField.text = String.Format(" {0} ({1})\n\n", text, confidence);
 
 
         if (final)

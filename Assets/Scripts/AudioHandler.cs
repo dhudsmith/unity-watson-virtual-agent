@@ -126,9 +126,10 @@ public class AudioHandler : MonoBehaviour
             StopCoroutine(_stopListeningTimeoutCoroutine);
             _stopListeningTimeoutCoroutine = null;
 
+            //TODO: do this once synthesizing speech or replace with triggered speech
             //Play the final audio clip
-            AudioOutput.clip = GetFinalAudioClip();
-            AudioOutput.Play();
+            //AudioOutput.clip = GetFinalAudioClip();
+            //AudioOutput.Play();
 
             //Reset the output audio data
             _outputAudioStream = null;

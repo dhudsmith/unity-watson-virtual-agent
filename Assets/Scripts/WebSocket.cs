@@ -18,7 +18,6 @@ public class WebSocket : MonoBehaviour
     public string WebSocketUrl;
     public bool IsReady { get; set; } = false;
     public byte[] ReceivedResults { get; set; } = new byte[0];
-    public bool IsNewResult { get; set; } = false;
     public Queue<SocketMessage> ReceivedMessageQueue = new Queue<SocketMessage>();
     public int AsyncCount { get; set; } = 0;
     public AudioHandler audio;
@@ -67,14 +66,12 @@ public class WebSocket : MonoBehaviour
 
     public async void SendText(String text)
     {
-        AsyncCount++;
         ArraySegment<byte> b = new ArraySegment<byte>(Encoding.UTF8.GetBytes(text));
         await _cws.SendAsync(b, WebSocketMessageType.Text, true, CancellationToken.None);
     }
 
     public async void SendBytes(byte[] b)
     {
-        AsyncCount++;
         ArraySegment<byte> buf = new ArraySegment<byte>(b);
         await _cws.SendAsync(buf, WebSocketMessageType.Binary, true, CancellationToken.None);
     }
@@ -91,8 +88,6 @@ public class WebSocket : MonoBehaviour
             WebSocketReceiveResult result;
             ReceivedResults = new byte[0];
             ArraySegment<byte> Buffer = new ArraySegment<byte>(new byte[_BufferSize]);
-            AsyncCount--;
-            IsNewResult = true;
 
             do
             {
