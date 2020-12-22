@@ -71,6 +71,7 @@ public class WatsonDemo : MonoBehaviour
     #region start/stop talking
     public void StartTalking()
     {
+        Socket.SendText(Socket.msg_start_listening.ToJson()); //send the start message to spin up speach to text
         if (!Audio.IsListening)
         {
             if (!Socket.IsReady)
@@ -81,7 +82,7 @@ public class WatsonDemo : MonoBehaviour
             TextInputField.text = ""; //empty the text field
             Audio.StartTalking(); //begin processing input audio
             StartCoroutine(SendAudioChunks()); //begin sending available audio chunks up to the web API
-            StartCoroutine(ListenResults()); //begin receiving available audio chunks from the web API
+            StartCoroutine(ListenTextMessages()); //begin receiving available audio chunks from the web API
             TalkButton.interactable = false; //disable button
         }
     }
@@ -91,7 +92,7 @@ public class WatsonDemo : MonoBehaviour
         TalkButton.interactable = true; //enable the talk button
 
         Socket.SendText(Socket.msg_stop_listening.ToJson()); //send the stop message to trigger graceful close of stt
-        Socket.IsReady = false; //set the
+        //Socket.IsReady = false; //set the
 
         if (Audio.IsListening)
         {
@@ -102,7 +103,7 @@ public class WatsonDemo : MonoBehaviour
 
         //stop sending and listening to results
         StopCoroutine(SendAudioChunks()); //TODO: wait until buffer queue is empty before shutting down!
-        StopCoroutine(ListenResults());
+        StopCoroutine(ListenTextMessages());
     }
 
     IEnumerator SendAudioChunks()
@@ -122,7 +123,7 @@ public class WatsonDemo : MonoBehaviour
     }
 
 
-    IEnumerator ListenResults()
+    IEnumerator ListenTextMessages()
     {
         while (true)
         {
@@ -130,17 +131,53 @@ public class WatsonDemo : MonoBehaviour
 
             if (Socket.IsNewResult)
             {
-                //A new audio chunk is available from the api.
-                Audio.OnReceiveAudio(Socket.ReceivedResults);
-                Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
-                Socket.ReceivedResults = new byte[0];
-                Socket.IsNewResult = false;
+                if (Socket.ReceivedMessageQueue.Count>0)
+                {
+                    OnTextMessageReceived();
+                }
+                // TODO process audio somewhere
+                //else
+                //{
+                //    //A new audio chunk is available from the api.
+                //    Audio.OnReceiveAudio(Socket.ReceivedResults);
+                //    Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
+
+                //    Socket.ReceivedResults = new byte[0];
+                //}
             }
         }
     }
-#endregion
 
-#region todo: unused methods
+    //Handle incoming text messages
+    private void OnTextMessageReceived()
+    {
+        SocketMessage msg = Socket.ReceivedMessageQueue.Dequeue();
+       
+        if (ConversationText.text == null)
+        {
+            ConversationText.text = "";
+        }
+
+        if (msg.type == "AGENT_RESULT")
+        {
+            if (msg.note == "SPEAKER_TRANSCRIPT")
+            {
+                ConversationText.text += String.Format("\nYou: {0}", msg.meta["text"]);
+            }
+            else if(msg.note == "AGENT_RESPONSE")
+            {
+                ConversationText.text += String.Format("\nBob: {0}", msg.meta["text"]);
+            }
+        }
+        else
+        {
+            Debug.LogError(String.Format("Unknown message type: {0}", msg.type));
+        }
+    }
+    #endregion
+
+
+    #region todo: unused methods
     //Currently unused, would
     private void SpeechToTextSpeechRecognized(string text, double confidence, bool final)
     {
@@ -154,30 +191,6 @@ public class WatsonDemo : MonoBehaviour
             finalText = finalText.Replace("%HESITATION", "");
 
             ConversationText.text = String.Format("You: {0}\n\n", finalText, confidence);
-        }
-    }
-
-    public void EnterText()
-    {
-        ConversationText.text = String.Format("You: {0}\n\n", TextInputField.text);
-        TextInputField.text = "";
-    }
-
-    //Currently unused, this would take actions in the game when speech is returned
-    private void OnConversationResponse(string text, string intent, float confidence)
-    {
-        if (text == null)
-        {
-            text = "";
-        }
-
-        if (ShowIntentConfidence)
-        {
-            ConversationText.text += String.Format("Watson: {0} (#{1} {2:0.000})", text, intent, confidence);
-        }
-        else
-        {
-            ConversationText.text += String.Format("Watson: {0}", text);
         }
     }
 

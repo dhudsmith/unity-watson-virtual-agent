@@ -19,16 +19,15 @@ public class WebSocket : MonoBehaviour
     public bool IsReady { get; set; } = false;
     public byte[] ReceivedResults { get; set; } = new byte[0];
     public bool IsNewResult { get; set; } = false;
+    public Queue<SocketMessage> ReceivedMessageQueue = new Queue<SocketMessage>();
     public int AsyncCount { get; set; } = 0;
     public AudioHandler audio;
 
     // message strings
     public SocketMessage msg_initiate = new SocketMessage("action", "INITIATE",  new Dictionary<String, String> {
       { "freq", AudioHandler.Meta()[0] }, { "channel", AudioHandler.Meta()[1] }, { "format", AudioHandler.Meta()[2]}});
-    public SocketMessage msg_start_listening = new SocketMessage("action", "START_LISTENING", new Dictionary<String, String> {
-      { "freq", AudioHandler.Meta()[0] }, { "channel", AudioHandler.Meta()[1] }, { "format", AudioHandler.Meta()[2]}});
-    public SocketMessage msg_stop_listening = new SocketMessage("action", "STOP_LISTENING",  new Dictionary<String, String> {
-      { "freq", AudioHandler.Meta()[0] }, { "channel", AudioHandler.Meta()[1] }, { "format", AudioHandler.Meta()[2]}});
+    public SocketMessage msg_start_listening = new SocketMessage("action", "START_LISTENING", null);
+    public SocketMessage msg_stop_listening = new SocketMessage("action", "STOP_LISTENING",  null);
 
     private ClientWebSocket _cws = null;
     private readonly int _BufferSize = 1024;
@@ -37,7 +36,6 @@ public class WebSocket : MonoBehaviour
     #region start up
     void Start() {
         Connect();
-        SendText(msg_initiate.ToJson());  // Send the initiate message to trigger setup of the stt service
     }
 
     /// <summary>
@@ -52,12 +50,12 @@ public class WebSocket : MonoBehaviour
             await _cws.ConnectAsync(uri, CancellationToken.None);
             if (_cws.State == WebSocketState.Open)
             {
-                Debug.Log("Connected to WebSocket");
+                Debug.Log("Connected to WebSocket.");
+                Debug.Log("Sending initiate message to agent.");
+                SendText(msg_initiate.ToJson());
+                Receive();
+                IsReady = true;
             }
-
-            Receive();
-
-            IsReady = true;
         }
         catch (Exception e) {
             Debug.Log("Failed to connect to WebSocket. Error: " + e.Message);
@@ -82,60 +80,36 @@ public class WebSocket : MonoBehaviour
     }
 
     /// <summary>
-    /// Consume text messages from the web api.
-    /// This method consumes a message in units of _BufferSize until a message is complete.
-    /// Results are stored appended in byte array for use of other services
-    /// </summary>
-    async void ReceiveText()
-    {
-        ArraySegment<byte> Buffer = new ArraySegment<byte>(new byte[_BufferSize]);
-
-        while (true)
-        {
-            WebSocketReceiveResult result;
-            do
-            {
-                result = await _cws.ReceiveAsync(Buffer, CancellationToken.None);
-                ReceivedResults = WatsonDemoUtils.ConcatenateByteArrays(ReceivedResults, Buffer.Array);
-            } while (!result.EndOfMessage);
-
-            AsyncCount--;
-            IsNewResult = true;
-
-            if (result.MessageType == WebSocketMessageType.Close)
-                break;
-
-        }
-    }
-
-    /// <summary>
     /// Consume audio chunks from the web api.
     /// This method consumes a message in units of _BufferSize until a message is complete.
     /// Results are stored appended in byte array for use of other services
     /// </summary>
     async void Receive()
     {
-        ArraySegment<byte> Buffer = new ArraySegment<byte>(new byte[_BufferSize]);
-
         while (true)
         {
             WebSocketReceiveResult result;
+            ReceivedResults = new byte[0];
+            ArraySegment<byte> Buffer = new ArraySegment<byte>(new byte[_BufferSize]);
+            AsyncCount--;
+            IsNewResult = true;
 
             do
             {
                 result = await _cws.ReceiveAsync(Buffer, CancellationToken.None);
-
-                Debug.Log(result.MessageType);
-
                 ReceivedResults = WatsonDemoUtils.ConcatenateByteArrays(ReceivedResults, Buffer.Array);
             } while (!result.EndOfMessage);
 
-            AsyncCount--;
-            IsNewResult = true;
-
-            if (result.MessageType == WebSocketMessageType.Close)
+            if (result.MessageType == WebSocketMessageType.Text)
+            {
+                string text = System.Text.Encoding.UTF8.GetString(ReceivedResults, 0, ReceivedResults.Length);
+                Debug.Log(text);
+                ReceivedMessageQueue.Enqueue(Newtonsoft.Json.JsonConvert.DeserializeObject<SocketMessage>(text));
+            }
+            else if (result.MessageType == WebSocketMessageType.Close)
+            {
                 break;
-
+            }
         }
     }
     #endregion
