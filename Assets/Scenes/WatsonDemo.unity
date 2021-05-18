@@ -804,7 +804,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81dfa1ef49c0cad4a9f52cfca0d65957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WebSocketUrl: vrbob-kind-panther-tm.mybluemix.net/api
+  WebSocketUrl: localhost:5000/api
   audio: {fileID: 0}
 --- !u!114 &840650860
 MonoBehaviour:

@@ -82,6 +82,7 @@ public class WatsonDemo : MonoBehaviour
             Audio.StartTalking(); //begin processing input audio
             StartCoroutine(SendAudioChunks()); //begin sending available audio chunks up to the web API
             StartCoroutine(ListenTextMessages()); //begin receiving available audio chunks from the web API
+            StartCoroutine(ListenAudioMessages());
             TalkButton.interactable = false; //disable button
         }
     }
@@ -96,12 +97,11 @@ public class WatsonDemo : MonoBehaviour
         {
             //currently never get here as AudioHandler calls StopTalking internally.
             //could be used down the road as part of more flexible speech starting/stoping
-            Audio.StopTalking();
+             Audio.StopTalking();
         }
 
         //stop sending and listening to results
         StopCoroutine(SendAudioChunks()); //TODO: wait until buffer queue is empty before shutting down!
-        StopCoroutine(ListenTextMessages());
     }
 
     IEnumerator SendAudioChunks()
@@ -134,24 +134,29 @@ public class WatsonDemo : MonoBehaviour
         }
     }
 
-    //IEnumerator ListenAudioMessages()
-    //{
-        // TODO process incoming audio somewhere
-        //else
-        //{
-        //    //A new audio chunk is available from the api.
-        //    Audio.OnReceiveAudio(Socket.ReceivedResults);
-        //    Debug.Log("Received a chunk with " + Socket.ReceivedResults.Length + " bytes.");
+    IEnumerator ListenAudioMessages()
+    {
+         //TODO process incoming audio somewhere
+         while (true)
+         {
+            yield return null;
 
-        //    Socket.ReceivedResults = new byte[0];
-        //}
-    //}
+            int check_new_bytes = 0;
+            if (Socket.AudioResults.Length > check_new_bytes)
+            {//A new audio chunk is available from the api.
+                Audio.OnReceiveAudio(Socket.AudioResults);
+                Debug.Log("Received a chunk with " + (Socket.AudioResults.Length - check_new_bytes) + " bytes.");
+                check_new_bytes = Socket.AudioResults.Length;
+            }
+         }
+    }
 
     //Handle incoming text messages
     private void OnTextMessageReceived()
     {
         SocketMessage msg = Socket.ReceivedMessageQueue.Dequeue();
-       
+        Debug.Log(msg);
+
         if (ConversationText.text == null)
         {
             ConversationText.text = "";
@@ -168,10 +173,25 @@ public class WatsonDemo : MonoBehaviour
                 ConversationText.text += String.Format("\nBob: {0}", msg.meta["text"]);
             }
         }
+        else if (msg.type == "action")
+        {
+            if (msg.note == "DONE_SPEECH_SYNTHESIS")
+            {
+                StopListening();
+            }
+            
+        }
         else
         {
             Debug.LogError(String.Format("Unknown message type: {0}", msg.type));
         }
+    }
+
+    private void StopListening()
+    {
+        Audio.DoneListening();
+        StopCoroutine(ListenTextMessages());
+        StopCoroutine(ListenAudioMessages());
     }
     #endregion
 

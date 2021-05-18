@@ -126,13 +126,7 @@ public class AudioHandler : MonoBehaviour
             StopCoroutine(_stopListeningTimeoutCoroutine);
             _stopListeningTimeoutCoroutine = null;
 
-            //TODO: do this once synthesizing speech or replace with triggered speech
-            //Play the final audio clip
-            //AudioOutput.clip = GetFinalAudioClip();
-            //AudioOutput.Play();
-
-            //Reset the output audio data
-            _outputAudioStream = null;
+            
 
             //Invoke any subscribed routines
             StoppedListening?.Invoke();
@@ -155,6 +149,15 @@ public class AudioHandler : MonoBehaviour
     public void OnReceiveAudio(byte[] result)
     {
         _outputAudioStream = WatsonDemoUtils.ConcatenateByteArrays(_outputAudioStream, result);
+    }
+
+    public void DoneListening()
+    {
+        AudioOutput.clip = GetFinalAudioClip();
+        AudioOutput.Play();
+
+        //Reset the output audio data
+        _outputAudioStream = null;
     }
 
     public AudioClip GetFinalAudioClip()
