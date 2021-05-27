@@ -148,18 +148,25 @@ public class AudioHandler : MonoBehaviour
     #region Receiving Audio
     public void OnReceiveAudio(byte[] result)
     {
+        //places bytearray where it can be accesed 
+        //by the audio handler when it comes time to play
         _outputAudioStream = WatsonDemoUtils.ConcatenateByteArrays(_outputAudioStream, result);
                
     }
         
     public void DoneListening()
     {
-
-        AudioOutput.clip = GetFinalAudioClip();
-        AudioOutput.Play();
-
-        //Reset the output audio data
-        _outputAudioStream = null;
+        if (_outputAudioStream != null)
+        {   
+            //prepare and play final clip
+            AudioOutput.clip = GetFinalAudioClip();
+            AudioOutput.Play();
+        }
+        else
+        {
+            //no message to play
+            Debug.Log("No message to play");
+        }
     }
 
     public AudioClip GetFinalAudioClip()
@@ -169,6 +176,7 @@ public class AudioHandler : MonoBehaviour
         AudioClip clip = AudioClip.Create("clip", _outputAudioStream.Length, _rollingAudioClip.channels, MIC_FREQUENCY, false);
         clip.SetData(outputAudioStreamData, 0);
         Debug.Log("Formated/Added to final clip");
+        //reset for next message
         _outputAudioStream = null;
 
         return clip;

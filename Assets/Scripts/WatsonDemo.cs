@@ -20,7 +20,6 @@ public class WatsonDemo : MonoBehaviour
     // Required Components
     public AudioHandler Audio;
     public WebSocket Socket;
-    private int incomingByteCount = 0;
     
 
     #endregion
@@ -147,9 +146,8 @@ public class WatsonDemo : MonoBehaviour
              {//A new audio chunk is available from the api.
                  byte[] temp = Socket.ReceivedAudioQueue.Dequeue();
                  Audio.OnReceiveAudio(temp);
-                 incomingByteCount += temp.Length;
                  Debug.Log("Received a chunk with " + temp.Length + " bytes.");
-                
+
              }
              
 
@@ -183,10 +181,8 @@ public class WatsonDemo : MonoBehaviour
         {
             if (msg.note == "DONE_SPEECH_SYNTHESIS")
             {
-                string temp = msg.meta["bytes"];
-                int expectedBytes = int.Parse(temp);
-                
-                //check for enough bytes through message
+                               
+                //check if all audio has been processed, if not, requeue the stop message for later
                 if (Socket.ReceivedAudioQueue.Count > 0)
                 {
                     Socket.ReceivedMessageQueue.Enqueue(msg);
@@ -207,6 +203,7 @@ public class WatsonDemo : MonoBehaviour
     
     private void StopListening()
     {
+        //stop coroutines related to listening and play the audio message
         StopCoroutine("ListenTextMessages");
         StopCoroutine("ListenAudioMessages");
         Audio.DoneListening();
