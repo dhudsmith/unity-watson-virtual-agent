@@ -20,6 +20,8 @@ public class WatsonDemo : MonoBehaviour
     // Required Components
     public AudioHandler Audio;
     public WebSocket Socket;
+    private int incomingByteCount = 0;
+    
 
     #endregion
 
@@ -80,9 +82,9 @@ public class WatsonDemo : MonoBehaviour
             }
 
             Audio.StartTalking(); //begin processing input audio
-            StartCoroutine(SendAudioChunks()); //begin sending available audio chunks up to the web API
-            StartCoroutine(ListenTextMessages()); //begin receiving available audio chunks from the web API
-            StartCoroutine(ListenAudioMessages());
+            StartCoroutine("SendAudioChunks"); //begin sending available audio chunks up to the web API
+            StartCoroutine("ListenTextMessages"); //begin receiving available audio chunks from the web API
+            StartCoroutine("ListenAudioMessages");
             TalkButton.interactable = false; //disable button
         }
     }
@@ -101,7 +103,7 @@ public class WatsonDemo : MonoBehaviour
         }
 
         //stop sending and listening to results
-        StopCoroutine(SendAudioChunks()); //TODO: wait until buffer queue is empty before shutting down!
+        StopCoroutine("SendAudioChunks"); //TODO: wait until buffer queue is empty before shutting down!
     }
 
     IEnumerator SendAudioChunks()
@@ -136,18 +138,22 @@ public class WatsonDemo : MonoBehaviour
 
     IEnumerator ListenAudioMessages()
     {
-         //TODO process incoming audio somewhere
          while (true)
          {
-            yield return null;
+             yield return null;
 
-            int check_new_bytes = 0;
-            if (Socket.AudioResults.Length > check_new_bytes)
-            {//A new audio chunk is available from the api.
-                Audio.OnReceiveAudio(Socket.AudioResults);
-                Debug.Log("Received a chunk with " + (Socket.AudioResults.Length - check_new_bytes) + " bytes.");
-                check_new_bytes = Socket.AudioResults.Length;
-            }
+            
+             while (Socket.ReceivedAudioQueue.Count > 0)
+             {//A new audio chunk is available from the api.
+                 byte[] temp = Socket.ReceivedAudioQueue.Dequeue();
+                 Audio.OnReceiveAudio(temp);
+                 incomingByteCount += temp.Length;
+                 Debug.Log("Received a chunk with " + temp.Length + " bytes.");
+                
+             }
+             
+
+
          }
     }
 
@@ -177,7 +183,19 @@ public class WatsonDemo : MonoBehaviour
         {
             if (msg.note == "DONE_SPEECH_SYNTHESIS")
             {
-                StopListening();
+                string temp = msg.meta["bytes"];
+                int expectedBytes = int.Parse(temp);
+                
+                //check for enough bytes through message
+                if (Socket.ReceivedAudioQueue.Count > 0)
+                {
+                    Socket.ReceivedMessageQueue.Enqueue(msg);
+                }
+                else
+                {
+                    StopListening();
+                }
+                
             }
             
         }
@@ -186,12 +204,12 @@ public class WatsonDemo : MonoBehaviour
             Debug.LogError(String.Format("Unknown message type: {0}", msg.type));
         }
     }
-
+    
     private void StopListening()
     {
+        StopCoroutine("ListenTextMessages");
+        StopCoroutine("ListenAudioMessages");
         Audio.DoneListening();
-        StopCoroutine(ListenTextMessages());
-        StopCoroutine(ListenAudioMessages());
     }
     #endregion
 

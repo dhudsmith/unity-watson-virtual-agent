@@ -17,7 +17,7 @@ public class WebSocket : MonoBehaviour
     /// </summary>
     public string WebSocketUrl;
     public bool IsReady { get; set; } = false;
-    public byte[] AudioResults { get; set; } = new byte[0];
+    public Queue<byte[]> ReceivedAudioQueue = new Queue<byte[]>();
     public Queue<SocketMessage> ReceivedMessageQueue = new Queue<SocketMessage>();
     public int AsyncCount { get; set; } = 0;
     public AudioHandler audio;
@@ -99,7 +99,7 @@ public class WebSocket : MonoBehaviour
             //Debug.Log(result.MessageType);
             if (result.MessageType == WebSocketMessageType.Binary)
             {
-                AudioResults = WatsonDemoUtils.ConcatenateByteArrays(AudioResults, ReceivedResults);
+                ReceivedAudioQueue.Enqueue(ReceivedResults);
             }
             else if (result.MessageType == WebSocketMessageType.Text)
             {

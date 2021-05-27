@@ -149,10 +149,12 @@ public class AudioHandler : MonoBehaviour
     public void OnReceiveAudio(byte[] result)
     {
         _outputAudioStream = WatsonDemoUtils.ConcatenateByteArrays(_outputAudioStream, result);
+               
     }
-
+        
     public void DoneListening()
     {
+
         AudioOutput.clip = GetFinalAudioClip();
         AudioOutput.Play();
 
@@ -166,6 +168,8 @@ public class AudioHandler : MonoBehaviour
         float[] outputAudioStreamData = WatsonDemoUtils.PCM2Floats(_outputAudioStream);
         AudioClip clip = AudioClip.Create("clip", _outputAudioStream.Length, _rollingAudioClip.channels, MIC_FREQUENCY, false);
         clip.SetData(outputAudioStreamData, 0);
+        Debug.Log("Formated/Added to final clip");
+        _outputAudioStream = null;
 
         return clip;
     }

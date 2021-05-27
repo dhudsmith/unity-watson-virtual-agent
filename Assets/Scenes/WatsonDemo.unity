@@ -819,7 +819,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AudioInput: {fileID: 638685869}
-  AudioOutput: {fileID: 276239022}
+  AudioOutput1: {fileID: 276239022}
+  AudioOutput2: {fileID: 276239022}
   InactivityTimeoutSec: 6
 --- !u!1 &1090470640
 GameObject:
@@ -2977,7 +2978,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AudioInput: {fileID: 0}
-  AudioOutput: {fileID: 0}
+  AudioOutput1: {fileID: 0}
+  AudioOutput2: {fileID: 0}
   InactivityTimeoutSec: 6
 --- !u!114 &2135168642
 MonoBehaviour:
